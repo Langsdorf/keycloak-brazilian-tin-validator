@@ -42,6 +42,25 @@ public class BrazilianTINValidatorFactory implements ValidatorFactory, Configure
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
+    static {
+        ProviderConfigProperty bypassStringProperty = new ProviderConfigProperty();
+        bypassStringProperty.setType(ProviderConfigProperty.STRING_TYPE);
+        bypassStringProperty.setName("bypassString");
+        bypassStringProperty.setLabel("Bypass String");
+        bypassStringProperty.setHelpText("A string that, if entered, will bypass validation.");
+        bypassStringProperty.setDefaultValue("FOREIGN");
+
+        ProviderConfigProperty enableBypassProperty = new ProviderConfigProperty();
+        enableBypassProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        enableBypassProperty.setName("enableBypass");
+        enableBypassProperty.setLabel("Enable Bypass");
+        enableBypassProperty.setHelpText("Enable or disable the bypass functionality.");
+        enableBypassProperty.setDefaultValue("false");
+
+        configProperties.add(bypassStringProperty);
+        configProperties.add(enableBypassProperty);
+    }
+
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;

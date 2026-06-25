@@ -9,12 +9,20 @@ public class ValidationUtils {
         if (value == null || value.isEmpty())
             return false;
 
-        String doc = value.replaceAll("\\D", "");
+        // remove espaços nas extremidades antes de qualquer processamento
+        value = value.trim();
 
-        if (doc.length() == 11)
-            return isValidCPF(doc);
-        if (doc.length() == 14)
-            return isValidCNPJ(doc);
+        // CPF: permanece puramente numérico
+        String cpf = value.replaceAll("\\D", "");
+        if (cpf.length() == 11)
+            return isValidCPF(cpf);
+
+        // CNPJ: remove tudo que não é alfanumérico (máscara . / -, espaços e os
+        // colchetes que o Keycloak adiciona ao serializar a lista de valores),
+        // preserva as letras do formato alfanumérico e normaliza para maiúsculo
+        String cnpj = value.replaceAll("[^0-9A-Za-z]", "").toUpperCase();
+        if (cnpj.length() == 14)
+            return isValidCNPJ(cnpj);
 
         return false;
     }
@@ -102,30 +110,30 @@ public class ValidationUtils {
     }
 
     /**
-     * Realiza a validação de um cnpj
-     * 
-     * @param cnpj String - o CNPJ pode ser passado no formato 99.999.999/9999-99 ou
-     *             99999999999999
+     * Realiza a validação de um CNPJ, incluindo o formato alfanumérico definido
+     * pela Receita Federal (IN RFB nº 2.229/2024, vigência a partir de julho/2026).
+     *
+     * Regras:
+     * - 14 posições no total;
+     * - as 12 primeiras posições podem ser alfanuméricas (0-9, A-Z);
+     * - os 2 dígitos verificadores permanecem numéricos (0-9);
+     * - o DV é calculado pelo módulo 11, usando o valor (ASCII - 48) de cada caractere,
+     *   o que mapeia '0'..'9' para 0..9 e 'A'..'Z' para 17..42.
+     *
+     * @param cnpj String - o CNPJ já sem máscara e em maiúsculo (ex.: 99999999999999
+     *             ou 12ABC34501DE35)
      * @return boolean
      */
     private static boolean isValidCNPJ(String cnpj) {
-        cnpj = cnpj.replace(".", "");
-        cnpj = cnpj.replace("-", "");
-        cnpj = cnpj.replace("/", "");
-
-        try {
-            Long.parseLong(cnpj);
-        } catch (NumberFormatException e) {
+        if (cnpj == null || cnpj.length() != 14)
             return false;
-        }
 
-        // considera-se erro CNPJ's formados por uma sequencia de numeros iguais
-        if (cnpj.equals("00000000000000") || cnpj.equals("11111111111111")
-                || cnpj.equals("22222222222222") || cnpj.equals("33333333333333")
-                || cnpj.equals("44444444444444") || cnpj.equals("55555555555555")
-                || cnpj.equals("66666666666666") || cnpj.equals("77777777777777")
-                || cnpj.equals("88888888888888") || cnpj.equals("99999999999999") || (cnpj.length() != 14))
-            return (false);
+        // 12 primeiras posições: alfanuméricas (0-9, A-Z); 2 últimas: numéricas
+        if (!cnpj.substring(0, 12).matches("[0-9A-Z]{12}"))
+            return false;
+        if (!cnpj.substring(12).matches("[0-9]{2}"))
+            return false;
+
         char dig13, dig14;
         int sm, i, r, num, peso; // "try" - protege o código para eventuais
                                  // erros de conversao de tipo (int)

@@ -22,6 +22,29 @@ public class BrazilianTINValidatorTest {
     }
 
     @Test
+    @DisplayName("Valid CNPJ serialized as a Keycloak list (wrapped in brackets)")
+    public void shouldAnswerWithTrueForBracketWrappedCNPJ() {
+        // No Keycloak o valor chega como lista; value.toString() vem como "[...]"
+        String numericAsList = "[53314754000182]";
+        String alphanumericAsList = "[ENKBZ0VL000109]";
+
+        assertTrue(ValidationUtils.isValid(numericAsList));
+        assertTrue(ValidationUtils.isValid(alphanumericAsList));
+    }
+
+    @Test
+    @DisplayName("Valid alphanumeric CNPJ (SEFAZ/Receita format)")
+    public void shouldAnswerWithTrueForAlphanumericCNPJ() {
+        String validMasked = "12.ABC.345/01DE-35";
+        String validUnmasked = "12ABC34501DE35";
+        String validLowercase = "12abc34501de35";
+
+        assertTrue(ValidationUtils.isValid(validMasked));
+        assertTrue(ValidationUtils.isValid(validUnmasked));
+        assertTrue(ValidationUtils.isValid(validLowercase));
+    }
+
+    @Test
     @DisplayName("Invalid CPF and CNPJ")
     public void shouldAnswerWithFalse() {
         String invalidCPF = "123.456.789-00";
@@ -35,5 +58,17 @@ public class BrazilianTINValidatorTest {
         assertTrue(!ValidationUtils.isValid(invalidLength));
         assertTrue(!ValidationUtils.isValid(nullValue));
         assertTrue(!ValidationUtils.isValid(emptyValue));
+    }
+
+    @Test
+    @DisplayName("Invalid alphanumeric CNPJ")
+    public void shouldAnswerWithFalseForAlphanumericCNPJ() {
+        String wrongCheckDigits = "12ABC34501DE99"; // DV correto seria 35
+        String nonNumericCheckDigits = "12ABC34501DEAB"; // DV deve ser numérico
+        String lettersInCheckDigits = "12ABC34501DE3X";
+
+        assertTrue(!ValidationUtils.isValid(wrongCheckDigits));
+        assertTrue(!ValidationUtils.isValid(nonNumericCheckDigits));
+        assertTrue(!ValidationUtils.isValid(lettersInCheckDigits));
     }
 }
